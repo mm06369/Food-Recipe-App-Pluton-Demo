@@ -12,7 +12,7 @@ class APIService {
   static const String baseURL = "https://api.spoonacular.com/";
   static const String recipe = "recipes/";
   static const String complexSearch = "complexSearch";
-  static const String apiKey = '70b3b3207a3e4c848f3d3b846fd770da';
+  static const String apiKey = '66a7451689b64408badfc87984ea7e96';
 
   getRecipes({String? query, String? ingredients, String? diet}) async {
     try {
@@ -35,6 +35,20 @@ class APIService {
     return [];
   }
 
+  Future<Recipe> getRecipeInformation(int id) async {
+    try{
+      final response = await http.get(Uri.parse('$baseURL$recipe$id/information?includeNutrition=false').replace(queryParameters: {'apiKey':apiKey}));
+      if (response.statusCode == 200){
+        final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+        final recipeInfo = Recipe.fromJson(jsonData);
+        return recipeInfo;
+      }
+
+    } catch (e){
+      debugPrint("In getNutrition: ${e.toString()}");
+    }
+    return Recipe(id: id, title: '', imageUrl: '', imageType: '');
+  }
 
   Future<List<Nutrient>> getNutrition(int id) async {
     try{
@@ -70,7 +84,7 @@ class APIService {
     try{
       final response = await http.get(Uri.parse('$baseURL$recipe$id/analyzedInstructions').replace(queryParameters: {'apiKey':apiKey}));
       if (response.statusCode == 200){
-        final jsonData = jsonDecode(response.body) as List;
+        final jsonData = jsonDecode(response.body)[0]['steps'] as List;
         final recipeSteps = jsonData.map((recipeStep) => RecipeStep.fromJson(recipeStep)).toList();
         print("recipesteps: ${recipeSteps[0].stepDescription}");
         return recipeSteps;
@@ -87,18 +101,20 @@ class APIService {
     final Future<List<Nutrient>> nutrientsFuture = getNutrition(id);
     final Future<List<Ingredient>> ingredientsFuture = getIngredients(id);
     final Future<List<RecipeStep>> recipeStepsFuture = getRecipesInstruction(id);
-
+    final Future<Recipe> recipeInfoFuture = getRecipeInformation(id);
     // Wait for all futures to complete
     final results = await Future.wait([
       nutrientsFuture,
       ingredientsFuture,
       recipeStepsFuture,
+      recipeInfoFuture
     ]);
 
     return RecipeDetail(
       nutrients: results[0] as List<Nutrient>,
       ingredients: results[1] as List<Ingredient>,
       recipeSteps: results[2] as List<RecipeStep>, 
+      recipeInfo: results[3] as Recipe
     );
   } catch (e) {
     debugPrint("Error fetching recipe details: $e");

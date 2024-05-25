@@ -19,28 +19,33 @@ class SavedRecipesPage extends StatelessWidget {
             return ListView.builder(
               itemCount: snapshot.data!.length,
               itemBuilder: (context, index) {
-                var recipe = Recipe(
-                  id: snapshot.data![index]['id'],
-                  title: snapshot.data![index]['title'],
-                  imageUrl: snapshot.data![index]['imageUrl'],
-                  imageType: 'jpg',
-                );
+                final recipeData = snapshot.data![index];
                 return Dismissible(
-                  key: Key(recipe.id.toString()),
+                  key: Key(recipeData['id'].toString()),
                   direction: DismissDirection.endToStart,
                   onDismissed: (direction) async {
-                    await DBHelper.deleteRecipe(recipe.id);
+                    await DBHelper.deleteRecipe(recipeData['id']);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("${recipe.title} deleted"))
+                      SnackBar(content: Text("Recipe deleted")),
                     );
                   },
                   background: Container(
                     color: Colors.red,
-                    padding: EdgeInsets.symmetric(horizontal: 20),
                     alignment: Alignment.centerRight,
-                    child: Icon(Icons.delete, color: Colors.white),
+                    padding: EdgeInsets.symmetric(horizontal: 20),
+                    child: Icon(
+                      Icons.delete,
+                      color: Colors.white,
+                    ),
                   ),
-                  child: RecipeCard(recipe: recipe),
+                  child: RecipeCard(
+                    recipe: Recipe(
+                      id: recipeData['id'],
+                      title: recipeData['title'],
+                      imageUrl: recipeData['imageUrl'],
+                      imageType: 'jpg',
+                    ),
+                  ),
                 );
               },
             );
